@@ -1,0 +1,86 @@
+﻿@using System.Security.Claims
+@using AspNet.Security.OAuth.Twitch
+@inject NavigationManager NavManager
+
+<div class="top-bar">
+    <div class="top-bar-page-title">
+        <span>@PageTitle</span>
+    </div>
+    <div class="top-bar-right">
+        <AuthorizeView Roles="Admin">
+            <Authorized>
+                <button class="stream-list-update-button" @onclick="CallUpdateDatabase">
+                    <span>Обновить базу стримов</span>
+                </button>
+            </Authorized>
+        </AuthorizeView>
+        <div class="profile">
+            <AuthorizeView>
+                <NotAuthorized>
+                    <button class="signin-button" @onclick="SighIn">
+                        <span class="signin-title">Войти</span>
+                    </button>
+                </NotAuthorized>
+                <Authorized>
+                    <button class="profile-button" @onclick="ShowHideProfilePanel">
+                        <img src="@context.User.Claims.FirstOrDefault(w => w.Type == TwitchAuthenticationConstants.Claims.ProfileImageUrl)?.Value"
+                             alt="" class="profile-image">
+                    </button>
+                    <div class="@ProfilePanelState profile-panel">
+                        <div class="profile-panel-background"></div>
+                        <div class="profile-panel-main">
+                            <div class="profile-info">
+                                <div class="profile-info-image">
+                                    <img src="@context.User.Claims.FirstOrDefault(f => f.Type == TwitchAuthenticationConstants.Claims.ProfileImageUrl)?.Value"
+                                         alt="">
+                                </div>
+                                <div class="profile-info-user">
+                                    <div class="profile-panel-info-nick">
+                                        <p>Ник:</p>
+                                        <p>@context.User.Claims.FirstOrDefault(f => f.Type == TwitchAuthenticationConstants.Claims.DisplayName)?.Value</p>
+                                    </div>
+                                    <div class="profile-panel-info-id">
+                                        <p>ID:</p>
+                                        <p>@context.User.Claims.FirstOrDefault(f => f.Type == ClaimTypes.NameIdentifier)?.Value</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="signout-button" @onclick="SignOut">
+                                <span class="signout-title">Выйти</span>
+                            </button>
+                        </div>
+                    </div>
+                </Authorized>
+            </AuthorizeView>
+        </div>
+    </div>
+</div>
+
+@code
+{
+    [Parameter] public string? PageTitle { get; set; }
+
+    private bool _hideProfilePanel = true;
+    private string? ProfilePanelState => _hideProfilePanel ? "hide-profile-panel" : null;
+
+    private void SighIn()
+    {
+        NavManager.NavigateTo($"/auth/signin?page={NavManager.ToBaseRelativePath(NavManager.Uri)}", true);
+    }
+
+    private void SignOut()
+    {
+        NavManager.NavigateTo($"/auth/signout?page={NavManager.ToBaseRelativePath(NavManager.Uri)}", true);
+    }
+
+    private void ShowHideProfilePanel()
+    {
+        _hideProfilePanel = !_hideProfilePanel;
+    }
+
+    private static async Task CallUpdateDatabase()
+    {
+        using var httpClient = new HttpClient();
+        await httpClient.PatchAsync(new Uri(new Uri(ClientVariables.InternalServerUrl), "archive/scan"), null);
+    }
+}

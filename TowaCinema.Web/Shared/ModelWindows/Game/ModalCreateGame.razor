@@ -1,0 +1,104 @@
+﻿@using System.Net.Http.Headers
+@using Microsoft.AspNetCore.Components.Forms
+<div class="modal">
+    <div class="modal-bg"></div>
+    <div class="modal-window">
+        <div class="modal-window-title">
+            <p>Создание новой игры</p>
+        </div>
+        <div class="modal-separator"></div>
+        <div class="modal-window-main">
+            <div class="modal-element">
+                <p class="modal-element-title">Название игры:</p>
+                <input type="text" class="modal-text-input" @bind-Value="@_gameTitle" @bind-Value:event="oninput"/>
+            </div>
+            <div class="modal-element">
+                <p class="modal-element-title">Файл превью игры:</p>
+                <InputFile class="modal-file-input" OnChange="@OnChangeFileInput"/>
+            </div>
+        </div>
+        <div class="modal-separator"></div>
+        @if (!string.IsNullOrWhiteSpace(_responseErrorMessage))
+        {
+            <div class="modal-element-error">
+                <span>@($"* {_responseErrorMessage}")</span>
+            </div>
+            <div class="modal-separator"></div>
+        }
+        <div class="modal-buttons">
+            <button class="modal-button" disabled="@IsDisabled" @onclick="@CreateGame">
+                <span>Создать</span>
+            </button>
+            <button class="modal-button" @onclick="@(() => CloseModalWindow(false))">
+                <span>Отменить</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string _gameTitle = "";
+    private IBrowserFile? _gameThumbnailImage;
+    private bool _isDisabled;
+
+    private bool IsDisabled => string.IsNullOrWhiteSpace(_gameTitle) || _gameThumbnailImage is null || _isDisabled;
+
+    private string? _responseErrorMessage;
+
+    [Parameter] public EventCallback<bool> OnClose { get; set; }
+
+    private async Task CloseModalWindow(bool isSuccess)
+    {
+        await OnClose.InvokeAsync(isSuccess);
+    }
+
+    private void OnChangeFileInput(InputFileChangeEventArgs arg)
+    {
+        _gameThumbnailImage = arg.File;
+    }
+
+    private async Task CreateGame()
+    {
+        _isDisabled = true;
+        _responseErrorMessage = null;
+
+        using var formData = new MultipartFormDataContent();
+
+        var gameTitle = new StringContent(_gameTitle, new MediaTypeHeaderValue("text/plain"));
+
+        formData.Add(gameTitle, "GameTitle");
+
+        if (_gameThumbnailImage is not null)
+        {
+            const int maxFileSize = 1024 * 1024 * 10;
+            var thumbnailFile =
+                new StreamContent(_gameThumbnailImage.OpenReadStream(maxFileSize));
+
+            thumbnailFile.Headers.ContentType =
+                new MediaTypeHeaderValue(_gameThumbnailImage.ContentType);
+
+            formData.Add(thumbnailFile, "ThumbnailFile", _gameThumbnailImage.Name);
+        }
+
+        try
+        {
+            using var httpClient = new HttpClient();
+            var response = await httpClient.PostAsync(new Uri(new Uri(ClientVariables.InternalServerUrl), "archive/games"), formData);
+
+            if (response.IsSuccessStatusCode)
+            {
+                await CloseModalWindow(true);
+            }
+
+            _responseErrorMessage = await response.Content.ReadAsStringAsync();
+            _isDisabled = false;
+        }
+        catch
+            (Exception)
+        {
+            _responseErrorMessage = "При попытке отправки данных на сервер возникли проблемы";
+            _isDisabled = false;
+        }
+    }
+
+}

@@ -1,0 +1,512 @@
+﻿@page "/games/{gameid:guid}/streams"
+@using System.Net.Http.Headers
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using Newtonsoft.Json
+@using Newtonsoft.Json.Converters
+@using TowaCinema.ClassLibrary.Enums
+@using TowaCinema.Web.Shared.ModelWindows.Stream
+@inject IJSRuntime JsRuntime
+@inject ProtectedSessionStorage ProtectedSessionStore
+
+<PageTitle>Cтримы игры @_sourceGameStreamsInfo?.Title - @ClientVariables.PageTitleEnding</PageTitle>
+
+<TopBar PageTitle=@($"Стримы по игре {_sourceGameStreamsInfo?.Title}")/>
+<div class="streams-list-container">
+    @if (_sortedStreams is not null)
+    {
+        @if (_sortedStreams.Count > 0)
+        {
+            <div class="stream-list-sort">
+                <select class="stream-list-sort-select" value="@_sortState" @onchange="SortChanged">
+                    <option value="New">Сначала новые</option>
+                    <option value="Old">Сначала старые</option>
+                </select>
+                <div class="stream-list-sort-separator"></div>
+                <div class="stream-list-date-sort">
+                    <input type="date" class="start-date sort-date" value="@_startDate.ToString("yyyy'-'MM'-'dd")"
+                           min="@_minDate.ToString("yyyy'-'MM'-'dd")" max="@_maxDate.ToString("yyyy'-'MM'-'dd")"
+                           @onchange="SortStartDateChanged">
+                    <span>-</span>
+                    <input type="date" class="end-date sort-date" value="@_endDate.ToString("yyyy'-'MM'-'dd")"
+                           min="@_minDate.ToString("yyyy'-'MM'-'dd")" max="@_maxDate.ToString("yyyy'-'MM'-'dd")"
+                           @onchange="SortEndDateChanged">
+                </div>
+                <button class="stream-list-date-button-clear sort-button" @onclick="ClearDateSort">
+                    <span>Сбросить</span>
+                </button>
+            </div>
+            <div class="streams-list-wrapper" @onscroll="OnScroll" tabindex="-1">
+                <div class="streams-library">
+                    @foreach (var stream in _sortedStreams)
+                    {
+                        <div class="stream-card-container">
+                            <div title="@stream.Title" class="stream-card">
+                                <div class="stream-thumbnail">
+                                    <div class="stream-thumbnail-placeholder"></div>
+                                    @if (stream.ProgressState.IsCompleted is not null && stream.ProgressState.IsCompleted == true)
+                                    {
+                                        <a href="@GetUrl(stream)" class="stream-pointer">
+                                            <img loading="lazy"
+                                                 src="@(new Uri(new Uri(ClientVariables.ExternalServerUrl), $"archive/thumbnails/stream/{stream.Id}/sm"))"
+                                                 alt="">
+                                        </a>
+                                        <div class="stream-continue-progress"
+                                             style="width: @((bool)stream.ProgressState.IsCompleted ? 100 : 0)%;">
+                                        </div>
+                                    }
+                                    else if (stream.ProgressState.InProgressTimestamp is not null)
+                                    {
+                                        <div class="stream-pointer" @onclick="@(() => OnStreamContinue(stream))">
+                                            <img loading="lazy"
+                                                 src="@(new Uri(new Uri(ClientVariables.ExternalServerUrl), $"archive/thumbnails/stream/{stream.Id}/sm"))"
+                                                 alt="">
+                                        </div>
+                                        <div class="stream-continue-progress" style="width: @(GetStreamPercentage(stream))%;"></div>
+                                    }
+                                    else
+                                    {
+                                        <a href="@GetUrl(stream)" class="stream-pointer">
+                                            <img loading="lazy"
+                                                 src="@(new Uri(new Uri(ClientVariables.ExternalServerUrl), $"archive/thumbnails/stream/{stream.Id}/sm"))"
+                                                 alt="">
+                                        </a>
+                                    }
+                                    <div class="stream-duration">
+                                        <div class="stream-duration-background">
+                                            <span class="stream-duration-time">@stream.Duration</span>
+                                        </div>
+                                    </div>
+                                    <AuthorizeView Roles="Admin">
+                                        <Authorized>
+                                            <div class="stream-live-state @(stream.IsPublished ? "switch-on" : null)"
+                                                 @onclick="() => ChangeStreamPublishState(stream)">
+                                                <span class="stream-live-text">LIVE</span>
+                                            </div>
+                                            <div class="stream-edit-button" @onclick="@(() => ShowEditModal(stream))">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                                                    <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>
+                                                </svg>
+                                            </div>
+                                        </Authorized>
+                                    </AuthorizeView>
+                                </div>
+                                <div class="stream-info">
+                                    <div class="stream-card-background">
+                                        <div class="stream-card-background-shape-1"></div>
+                                        <div class="stream-card-background-shape-2"></div>
+                                        <div class="stream-card-background-shape-3"></div>
+                                    </div>
+                                    <div class="stream-info-top stream-pointer" @onclick="@(() => OnStreamContinue(stream))">
+                                        <p class="stream-title">@stream.Title</p>
+                                        <p class="stream-date">@stream.StreamDate.ToString("dd.MM.yyyy")</p>
+                                    </div>
+                                    <div class="stream-info-bottom">
+                                        <div class="stream-games-list">
+                                            @foreach (var game in stream.Games)
+                                            {
+                                                <a title="@game.Title" href="@GetUrl(stream, game.GameTimestamp)" class="stream-games">
+                                                    <p>@game.Title</p>
+                                                </a>
+                                            }
+                                        </div>
+                                        <AuthorizeView>
+                                            <Authorized>
+                                                <div class="stream-view-states">
+                                                    <button title="Отметить просмотренным" class="stream-view-state-button"
+                                                            @onclick="@(() => OnStreamForViewChange(stream, true))">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                                            <path d="M0 0h24v24H0V0z" fill="none"/>
+                                                            <path d="M12 6c3.79 0 7.17 2.13 8.82 5.5C19.17 14.87 15.79 17 12 17s-7.17-2.13-8.82-5.5C4.83 8.13 8.21 6 12 6m0-2C7 4 2.73 7.11 1 11.5 2.73 15.89 7 19 12 19s9.27-3.11 11-7.5C21.27 7.11 17 4 12 4zm0 5c1.38 0 2.5 1.12 2.5 2.5S13.38 14 12 14s-2.5-1.12-2.5-2.5S10.62 9 12 9m0-2c-2.48 0-4.5 2.02-4.5 4.5S9.52 16 12 16s4.5-2.02 4.5-4.5S14.48 7 12 7z"/>
+                                                        </svg>
+                                                    </button>
+                                                    <button title="Отметить не просмотренным" class="stream-view-state-button"
+                                                            @onclick="@(() => OnStreamForViewChange(stream, false))">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                                            <path d="M0 0h24v24H0V0zm0 0h24v24H0V0zm0 0h24v24H0V0zm0 0h24v24H0V0z"
+                                                                  fill="none"/>
+                                                            <path d="M12 6c3.79 0 7.17 2.13 8.82 5.5-.59 1.22-1.42 2.27-2.41 3.12l1.41 1.41c1.39-1.23 2.49-2.77 3.18-4.53C21.27 7.11 17 4 12 4c-1.27 0-2.49.2-3.64.57l1.65 1.65C10.66 6.09 11.32 6 12 6zm-1.07 1.14L13 9.21c.57.25 1.03.71 1.28 1.28l2.07 2.07c.08-.34.14-.7.14-1.07C16.5 9.01 14.48 7 12 7c-.37 0-.72.05-1.07.14zM2.01 3.87l2.68 2.68C3.06 7.83 1.77 9.53 1 11.5 2.73 15.89 7 19 12 19c1.52 0 2.98-.29 4.32-.82l3.42 3.42 1.41-1.41L3.42 2.45 2.01 3.87zm7.5 7.5l2.61 2.61c-.04.01-.08.02-.12.02-1.38 0-2.5-1.12-2.5-2.5 0-.05.01-.08.01-.13zm-3.4-3.4l1.75 1.75c-.23.55-.36 1.15-.36 1.78 0 2.48 2.02 4.5 4.5 4.5.63 0 1.23-.13 1.77-.36l.98.98c-.88.24-1.8.38-2.75.38-3.79 0-7.17-2.13-8.82-5.5.7-1.43 1.72-2.61 2.93-3.53z"/>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </Authorized>
+                                        </AuthorizeView>
+                                    </div>
+                                </div>
+                                @if (_isModalContinueStreamVisible && _streamToContinue == stream)
+                                {
+                                    <ModalContinueStream StreamInfo="stream" Timestamp="@stream.ProgressState.InProgressTimestamp"
+                                                         OnClose="@(() => ModalWindowClosed(false))"/>
+                                }
+                                @if (_isModalStreamViewStateChangeVisible && _streamForViewChange == stream)
+                                {
+                                    <ModalStreamViewStateChange StreamInfo="stream" IsViewed="_isStreamViewed"
+                                                                OnClose="@(value => StreamViewChanged(stream, value))"/>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="loader-empty-container">
+                <div class="loader-empty">🐸</div>
+                <div class="loader-empty-title">
+                    <p>По этой игре пока нет ни одного стрима</p>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        @if (_isError)
+        {
+            <div class="loader-error-container">
+                <div class="loader-error">🐸</div>
+                <div class="loader-error-title">
+                    <p>Я не могу найти свои кувшинки :(</p>
+                    <p>Сервер недоступен</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="loader-container">
+                <div class="loader"></div>
+                <div class="loader-title">
+                    <p>Идёт получение стримов с архивных кувшинок...</p>
+                </div>
+            </div>
+        }
+    }
+</div>
+@if (_isModalEditStreamVisible && _streamToEdit is not null)
+{
+    <ModalEditStream StreamInfoModel="_streamToEdit" OnClose="@ModalWindowClosed"/>
+}
+
+@code {
+    private bool _isError;
+    private bool _isModalEditStreamVisible;
+    private bool _isModalContinueStreamVisible;
+    private bool _isModalStreamViewStateChangeVisible;
+    private bool _isStreamViewed;
+
+    private StreamInfoModel? _streamToEdit;
+    private IJSObjectReference? _scrollScript;
+    private StreamInfoModel? _streamToContinue;
+    private StreamInfoModel? _streamForViewChange;
+    private string _positionKey = "";
+    private readonly string _sortKey = "game_stream_list_sort_state";
+    private readonly string _sortStartDateKey = "game_stream_list_sort_start_date_state";
+    private readonly string _sortEndDateKey = "game_stream_list_sort_end_date_state";
+
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    [Parameter] public Guid GameId { get; set; }
+
+    private List<StreamInfoModel>? _sortedStreams;
+    private GameStreamsModel? _sourceGameStreamsInfo;
+    private DateTime _startDate;
+    private DateTime _endDate;
+    private DateTime _minDate;
+    private DateTime _maxDate;
+    private string _sortState = "New";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetStreamsInfo();
+        _positionKey = $"game_streams_{GameId.ToString()}_scroll_position";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender && _scrollScript is null)
+        {
+            _scrollScript = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "/js/archive-1.js");
+            var position = await ProtectedSessionStore.GetAsync<double>(_positionKey);
+            if (position.Success)
+            {
+                await _scrollScript.InvokeVoidAsync("setScrollPosition", ".streams-list-wrapper", position.Value);
+            }
+        }
+    }
+
+    private async Task GetStreamsInfo()
+    {
+        try
+        {
+            string? userId = null;
+
+            if (AuthenticationState?.Result.User.Identity is not null && AuthenticationState.Result.User.Identity.IsAuthenticated)
+            {
+                userId = AuthenticationState.Result.User.Claims.FirstOrDefault(f => f.Type == ClaimTypes.NameIdentifier)?.Value;
+            }
+
+            using var client = new HttpClient();
+            var data = await client.GetStringAsync(new Uri(new Uri(ClientVariables.InternalServerUrl),
+                $"archive/games/{GameId}/streams?admin={IsAdmin()}{(string.IsNullOrWhiteSpace(userId) ? null : $"&userId={userId}")}"));
+            _sourceGameStreamsInfo = JsonConvert.DeserializeObject<GameStreamsModel>(data, new IsoDateTimeConverter
+            {
+                DateTimeFormat = "dd.MM.yyyy"
+            });
+
+            if (_sourceGameStreamsInfo is not null)
+            {
+                foreach (var stream in _sourceGameStreamsInfo.Streams)
+                {
+                    stream.Games = stream.Games.OrderBy(o => o.GameTimestamp).ToList();
+                }
+
+                await ChechAndSetCookies();
+
+                _sortedStreams = _sourceGameStreamsInfo.Streams;
+                SortByDate();
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception)
+        {
+            _isError = true;
+        }
+    }
+
+    private async Task ChechAndSetCookies()
+    {
+        var sortCookie = await ProtectedSessionStore.GetAsync<string>(_sortKey);
+        if (!sortCookie.Success)
+        {
+            await ProtectedSessionStore.SetAsync(_sortKey, "New");
+        }
+        else
+        {
+            _sortState = sortCookie.Value!;
+        }
+
+        if (_sourceGameStreamsInfo is not null && _sourceGameStreamsInfo.Streams.Count > 0)
+        {
+            _sourceGameStreamsInfo.Streams = _sourceGameStreamsInfo.Streams.OrderByDescending(o => o.StreamDate).ToList();
+
+            var startDateCookie = await ProtectedSessionStore.GetAsync<DateTime>(_sortStartDateKey);
+
+            if (!startDateCookie.Success)
+            {
+                _startDate = _minDate = _sourceGameStreamsInfo.Streams.Last().StreamDate;
+
+                await ProtectedSessionStore.SetAsync(_sortStartDateKey, _startDate);
+            }
+            else
+            {
+                _startDate = _minDate = startDateCookie.Value;
+            }
+
+            var endDateCookie = await ProtectedSessionStore.GetAsync<DateTime>(_sortEndDateKey);
+
+            if (!endDateCookie.Success)
+            {
+                _endDate = _maxDate = _sourceGameStreamsInfo.Streams.First().StreamDate;
+
+                await ProtectedSessionStore.SetAsync(_sortEndDateKey, _endDate);
+            }
+            else
+            {
+                _endDate = _maxDate = endDateCookie.Value;
+            }
+        }
+    }
+
+    private bool IsAdmin()
+    {
+        return AuthenticationState is not null && AuthenticationState.Result.User.IsInRole("Admin");
+    }
+
+    private async Task ResetSortDates()
+    {
+        if (_sourceGameStreamsInfo is null) return;
+
+        _sourceGameStreamsInfo.Streams = _sourceGameStreamsInfo.Streams.OrderByDescending(o => o.StreamDate).ToList();
+        _startDate = _sourceGameStreamsInfo.Streams.Last().StreamDate;
+        _endDate = _sourceGameStreamsInfo.Streams.First().StreamDate;
+
+        await ProtectedSessionStore.SetAsync(_sortStartDateKey, _startDate);
+        await ProtectedSessionStore.SetAsync(_sortEndDateKey, _endDate);
+    }
+
+    private async Task SortChanged(ChangeEventArgs sort)
+    {
+        await ProtectedSessionStore.SetAsync(_sortKey, (string)sort.Value!);
+        _sortState = (string)sort.Value!;
+        SortStreams();
+    }
+
+    private void SortStreams()
+    {
+        if (_sortedStreams is null) return;
+
+        if (!IsAdmin())
+        {
+            _sortedStreams = _sortedStreams.Where(w => w.IsPublished).ToList();
+        }
+
+        _sortedStreams = _sortState switch
+        {
+            "New" => _sortedStreams.OrderByDescending(o => o.StreamDate).ToList(),
+            "Old" => _sortedStreams.OrderBy(o => o.StreamDate).ToList(),
+            _ => _sortedStreams
+        };
+    }
+
+    private void SortByDate()
+    {
+        if (_sourceGameStreamsInfo is null) return;
+
+        _sortedStreams = _sourceGameStreamsInfo.Streams.Where(w => w.StreamDate >= _startDate && w.StreamDate <= _endDate).ToList();
+        SortStreams();
+    }
+
+    private async Task ClearDateSort()
+    {
+        if (_sourceGameStreamsInfo is null) return;
+
+        await ResetSortDates();
+        _sortedStreams = _sourceGameStreamsInfo.Streams;
+        SortStreams();
+    }
+
+    private async Task SortStartDateChanged(ChangeEventArgs date)
+    {
+        if (date.Value is null || string.IsNullOrWhiteSpace((string)date.Value)) return;
+
+        var parsedDate = DateTime.Parse((string)date.Value);
+
+        _startDate = parsedDate;
+        SortByDate();
+
+        await ProtectedSessionStore.SetAsync(_sortStartDateKey, _startDate);
+    }
+
+    private async Task SortEndDateChanged(ChangeEventArgs date)
+    {
+        if (date.Value is null || string.IsNullOrWhiteSpace((string)date.Value)) return;
+
+        var parsedDate = DateTime.Parse((string)date.Value);
+
+        _endDate = parsedDate;
+        SortByDate();
+
+        await ProtectedSessionStore.SetAsync(_sortEndDateKey, _endDate);
+    }
+
+    private async Task ModalWindowClosed(bool isSuccess)
+    {
+        _isModalEditStreamVisible = false;
+        _streamToEdit = null;
+
+        _streamToContinue = null;
+        _isModalContinueStreamVisible = false;
+
+        _streamForViewChange = null;
+        _isModalStreamViewStateChangeVisible = false;
+
+        if (isSuccess)
+        {
+            await GetStreamsInfo();
+        }
+    }
+
+    private void ShowEditModal(StreamInfoModel selectedGameInfoModel)
+    {
+        _streamToEdit = new StreamInfoModel
+        {
+            Id = selectedGameInfoModel.Id,
+            Title = selectedGameInfoModel.Title,
+            StreamDate = selectedGameInfoModel.StreamDate,
+            Duration = selectedGameInfoModel.Duration,
+            Games = selectedGameInfoModel.Games,
+            IsPublished = selectedGameInfoModel.IsPublished
+        };
+        _isModalEditStreamVisible = true;
+    }
+
+    private static string GetUrl(StreamInfoModel stream, TimeOnly? timestamp = null)
+    {
+        return $"/player/{stream.Id.ToString()}{(timestamp is not null ? $"?start={timestamp.Value.ToTimeSpan().TotalSeconds}" : null)}";
+    }
+
+    private async Task ChangeStreamPublishState(StreamInfoModel stream)
+    {
+        var requestStreamInfo = new StreamInfoModel
+        {
+            Id = stream.Id,
+            Title = stream.Title,
+            StreamDate = stream.StreamDate,
+            Duration = stream.Duration,
+            Games = stream.Games,
+            IsPublished = !stream.IsPublished
+        };
+
+        using var formData = new MultipartFormDataContent();
+
+        var streamInfo = new StringContent(JsonConvert.SerializeObject(requestStreamInfo), new MediaTypeHeaderValue("application/json"));
+
+        formData.Add(streamInfo, "StreamInfo");
+
+        using var httpClient = new HttpClient();
+        var response = await httpClient.PutAsync(new Uri(new Uri(ClientVariables.InternalServerUrl), "archive/streams"), formData);
+
+        if (!response.IsSuccessStatusCode) return;
+
+        _ = GetStreamsInfo();
+    }
+
+    private async Task OnScroll()
+    {
+        if (_scrollScript is not null)
+        {
+            var scrollPosition = await _scrollScript.InvokeAsync<double>("getScrollPosition", ".streams-list-wrapper");
+            await ProtectedSessionStore.SetAsync(_positionKey, scrollPosition);
+        }
+    }
+
+    private void OnStreamContinue(StreamInfoModel stream)
+    {
+        _streamToContinue = stream;
+        _isModalContinueStreamVisible = true;
+    }
+
+    private static double GetStreamPercentage(StreamInfoModel stream)
+    {
+        var streamProgress = double.Parse(stream.ProgressState.InProgressTimestamp!);
+        var streamDuration = TimeSpan.Parse(stream.Duration).TotalSeconds;
+        return streamProgress / streamDuration * 100;
+    }
+
+    private void OnStreamForViewChange(StreamInfoModel stream, bool isViewed)
+    {
+        _streamForViewChange = stream;
+        _isStreamViewed = isViewed;
+        _isModalStreamViewStateChangeVisible = true;
+    }
+
+    private async Task StreamViewChanged(StreamInfoModel stream, bool isConfirm)
+    {
+        if (isConfirm)
+        {
+            if (AuthenticationState is null) return;
+
+            var userId = AuthenticationState.Result.User.Claims.FirstOrDefault(f => f.Type == ClaimTypes.NameIdentifier)?.Value;
+
+            using var httpClient = new HttpClient();
+            var result = await httpClient.DeleteAsync(new Uri(new Uri(ClientVariables.InternalServerUrl),
+                $"archive/timestamp/{userId}/{stream.Id}?state={(_isStreamViewed ? TimestampStates.End : TimestampStates.Start)}"));
+
+            if (result.IsSuccessStatusCode) await ModalWindowClosed(true);
+        }
+
+        await ModalWindowClosed(false);
+    }
+
+}

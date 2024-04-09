@@ -1,0 +1,390 @@
+﻿.modal {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal * {
+    font-family: var(--global-text-fonts), sans-serif;
+    color: var(--text-color);
+}
+
+.modal-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--modal-bg);
+    z-index: 10;
+}
+
+.modal-round {
+    border-radius: 0.7rem;
+}
+
+.modal-window {
+    z-index: 20;
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    background-color: var(--background-color);
+}
+
+.modal-window-title p {
+    font-size: 1.2rem;
+    font-weight: 800;
+}
+
+.modal-window-top {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.modal-window-left {
+    flex: 1;
+    width: 100%;
+    padding-block: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.modal-window-right {
+    flex: 1;
+    width: 100%;
+    padding-block: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.modal-window-main {
+    width: 100%;
+    padding-block: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.modal-element {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.modal-element-title {
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.modal-text-input {
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: 2rem;
+    padding: 0.8rem 1.2rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.modal-file-input {
+    border: 1px solid var(--border-color);
+    border-radius: 2rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.modal-file-input::file-selector-button {
+    padding: 0.8rem 1.2rem;
+    margin-right: 1.2rem;
+    background: linear-gradient(to bottom right, var(--topbar-gradient-1) 0%, var(--topbar-gradient-2) 100%);
+    border: none;
+    border-right: 1px solid var(--border-color);
+    font-family: var(--global-text-fonts), sans-serif;
+    color: var(--text-color);
+    cursor: pointer;
+}
+
+.modal-date {
+    align-items: flex-start;
+}
+
+.modal-date-input {
+    font-family: var(--global-text-fonts), sans-serif;
+    color: var(--text-color);
+    background: none;
+    border: 1px solid var(--border-color);
+    padding: 0.8rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: 2rem;
+}
+
+.modal-date-input::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(77%) sepia(6%) saturate(12%) hue-rotate(333deg) brightness(87%) contrast(84%);
+}
+
+.modal-live-switch {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background: linear-gradient(to bottom right, var(--topbar-gradient-1) 0%, var(--topbar-gradient-2) 100%);
+    cursor: pointer;
+}
+
+.modal-switch-on {
+    background: linear-gradient(to bottom right, var(--topbar-gradient-1) 0%, var(--topbar-gradient-5) 100%);
+}
+
+.modal-live-switch span {
+    z-index: 2;
+    font-family: var(--global-text-fonts), sans-serif;
+    color: var(--text-color);
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.05rem;
+    padding: 0.3rem;
+    pointer-events: none;
+}
+
+.modal-publish {
+    align-items: flex-start;
+}
+
+.modal-element-thumbnail-image {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    height: 100%;
+}
+
+.modal-element-thumbnail-image img {
+    width: 30%;
+}
+
+.modal-element-thumbnail-change {
+    width: 50%;
+    background: linear-gradient(to bottom right, var(--topbar-gradient-1) 0%, var(--topbar-gradient-2) 100%);
+    border: 1px solid var(--border-color);
+    border-radius: 2rem;
+    cursor: pointer;
+    padding: 0.8rem;
+}
+
+.modal-game-list {
+    height: 30rem;
+}
+
+.modal-element-games-list {
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    height: 100%;
+    overflow-y: scroll;
+}
+
+.modal-element-games-list-wrapper {
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0.5rem;
+}
+
+.modal-game {
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    display: flex;
+    padding: 0.5rem;
+    width: 100%;
+}
+
+.modal-game-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.modal-game-title {
+    display: flex;
+}
+
+.modal-game-timestamp {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.modal-game-title, .modal-game-timestamp {
+    font-family: var(--global-text-fonts), sans-serif;
+    color: var(--text-color);
+}
+
+.modal-game-title p, .modal-game-title span {
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.modal-game-timestamp p {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.modal-game-timestamp input {
+    background: none;
+    border: 1px solid var(--border-color);
+    padding: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: 2rem;
+}
+
+.modal-game-timestamp input::-webkit-outer-spin-button,
+.modal-game-timestamp input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.modal-game-right {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-game-switch {
+    border: 1px solid var(--border-color);
+    border-radius: 2rem;
+    width: 3rem;
+    height: 1.6rem;
+    margin: 1rem;
+    position: relative;
+    background-color: var(--background-color);
+    transition: all 0.3s;
+}
+
+.modal-game-switch-toggle {
+    transform: translate(calc(-50% + 0.6rem + 0.2rem), -50%);
+    position: absolute;
+    border: 1px solid var(--border-color);
+    height: 1.2rem;
+    width: 1.2rem;
+    border-radius: 50%;
+    top: 50%;
+    background-color: var(--topbar-gradient-4);
+    transition: all 0.3s;
+}
+
+.modal-game-active {
+    background-color: hsl(146, 100%, 18%);
+}
+
+.modal-game-active .modal-game-switch-toggle {
+    transform: translate(calc(-100% + 3rem - 0.25rem), -50%);
+}
+
+.modal-separator {
+    border-bottom: 1px solid var(--border-color);
+    width: 100%;
+}
+
+.modal-buttons {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.2rem;
+}
+
+.modal-button {
+    flex: 1;
+    background: linear-gradient(to bottom right, var(--topbar-gradient-1) 0%, var(--topbar-gradient-2) 100%);
+    border: 1px solid var(--border-color);
+    border-radius: 2rem;
+    cursor: pointer;
+    padding: 0.8rem;
+}
+
+.modal-button:hover, .modal-element-thumbnail-change:hover {
+    background: linear-gradient(to bottom right, var(--topbar-gradient-1) 0%, var(--topbar-gradient-3) 100%);
+}
+
+.modal-button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.modal-button:disabled:hover {
+    background: linear-gradient(to bottom right, var(--topbar-gradient-1) 0%, var(--topbar-gradient-2) 100%);
+}
+
+.modal-element-error {
+    width: 100%;
+}
+
+.modal-element-error span {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #b32121;
+}
+
+.modal-vert-buttons {
+    width: 60%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.2rem;
+    z-index: 11;
+}
+
+.modal-vert-button {
+    width: 100%;
+    background: linear-gradient(to bottom right, var(--topbar-gradient-1) 0%, var(--topbar-gradient-2) 100%);
+    border: 1px solid var(--border-color);
+    border-radius: 2rem;
+    cursor: pointer;
+    padding: 0.8rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+.modal-vert-button:hover {
+    background: linear-gradient(to bottom right, var(--topbar-gradient-1) 0%, var(--topbar-gradient-3) 100%);
+}
+
+.modal-confirm-main {
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}

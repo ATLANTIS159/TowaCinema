@@ -1,0 +1,35 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Components.Web
+@namespace TowaCinema.Web.Pages
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, user-scalable=yes, initial-scale=1.0"/>
+    <meta name="keywords"
+          content="etaCarinae, etaCarinae archive, etaCarinae архив, стрим, стрим etaCarinae, etaCarinae stream, Полина etaCarinae"/>
+    <meta name="description" content="Архив записей стримов Полины etaCarinae"/>
+    <base href="~/"/>
+    <link rel="icon" href="favicon.png"/>
+    <link rel="stylesheet" href="/css/archive.css"/>
+    <component type="typeof(HeadOutlet)" render-mode="Server"/>
+</head>
+<body>
+<component type="typeof(Core)" render-mode="Server"/>
+
+<div id="blazor-error-ui">
+    <environment include="Staging,Production">
+        An error has occurred. This application may no longer respond until reloaded.
+    </environment>
+    <environment include="Development">
+        An unhandled exception has occurred. See browser dev tools for details.
+    </environment>
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+<script src="_framework/blazor.server.js"></script>
+</body>
+</html>

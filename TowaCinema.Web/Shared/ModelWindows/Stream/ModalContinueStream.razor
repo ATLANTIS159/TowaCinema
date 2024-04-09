@@ -1,0 +1,36 @@
+﻿@if (StreamInfo is not null && Timestamp is not null)
+{
+    <div class="modal" title="">
+        <div class="modal-bg modal-round" @onclick="@Close"></div>
+        <div class="modal-vert-buttons">
+            <a href="@GetUrl(StreamInfo, Timestamp)" class="modal-vert-button">
+                <span>Продолжить с @GetTime</span>
+            </a>
+            <a href="@GetUrl(StreamInfo)" class="modal-vert-button">
+                <span>Начать с начала</span>
+            </a>
+        </div>
+    </div>
+}
+
+@code {
+
+    [Parameter] public StreamInfoModel? StreamInfo { get; set; }
+
+    [Parameter] public string? Timestamp { get; set; }
+
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private async Task Close()
+    {
+        await OnClose.InvokeAsync();
+    }
+
+    private string GetTime => Timestamp is not null ? TimeSpan.FromSeconds(int.Parse(Timestamp)).ToString(@"hh\:mm\:ss") : "";
+
+    private static string GetUrl(StreamInfoModel? stream, string? timestamp = null)
+    {
+        return $"/player/{stream?.Id.ToString()}{(timestamp is not null ? $"?start={timestamp}" : null)}";
+    }
+
+}

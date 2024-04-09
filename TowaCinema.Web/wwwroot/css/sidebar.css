@@ -1,0 +1,144 @@
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    justify-content: space-between;
+    height: 100%;
+    padding: 0.9rem 0.9rem 0 0;
+}
+
+.top-part a {
+    text-decoration: none;
+}
+
+.title h1 {
+    font-family: var(--title-text-fonts), sans-serif;
+    color: var(--title-text-color);
+    text-align: center;
+    line-height: 110%;
+    font-size: 2.5rem;
+}
+
+.navmenu {
+    margin-top: 1.5rem;
+}
+
+.nav-button, .social-link {
+    width: 100%;
+    border-bottom: 1px solid;
+    border-image: linear-gradient(270deg, var(--separator-gradient-1) 10%, var(--separator-gradient-2) 50%, var(--separator-gradient-1) 90%) 1;
+    display: flex;
+    text-decoration: none;
+    padding-block: 0.9rem;
+}
+
+.button-title, .social-link {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+}
+
+.active-glow {
+    position: absolute;
+    display: none;
+}
+
+.main-glow, .second-glow {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    border-radius: 100%;
+    background-color: var(--glow-color);
+}
+
+.main-glow {
+    height: 1.8rem;
+    width: 0.625rem;
+    filter: blur(1px);
+    box-shadow: 0 0 20px 3px var(--glow-color);
+    transform: translate(-65%, -50%);
+}
+
+.second-glow {
+    height: 0.94rem;
+    width: 2.5rem;
+    opacity: 0.12;
+    filter: blur(3px);
+    transform: translate(-50%, -50%);
+}
+
+.navmenu .active {
+    background: linear-gradient(to right, var(--button-active-gradient-1), var(--button-active-gradient-2) 80%);
+}
+
+.navmenu .active .active-glow {
+    display: block;
+}
+
+.sidebar-icon-shape {
+    width: 1.8rem;
+    height: 1.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.4rem;
+    transform: rotateZ(45deg);
+    margin-left: 1.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar-icon-shape svg {
+    fill: var(--nav-icon-color);
+    transform: rotateZ(-45deg);
+}
+
+.navmenu-icon, .social-icon {
+    padding: 0.25rem;
+}
+
+.sidebar p {
+    font-family: var(--global-text-fonts), sans-serif;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    font-weight: 400;
+}
+
+.nav-button:hover .sidebar-icon-shape, .social-link:hover .sidebar-icon-shape {
+    background: linear-gradient(to left, var(--icon-shape-hover-gradient-1), var(--icon-shape-hover-gradient-2));
+}
+
+.navmenu .active .sidebar-icon-shape {
+    background: linear-gradient(to left, var(--icon-shape-active-gradient-1), var(--icon-shape-active-gradient-2));
+}
+
+.socials-title h2 {
+    font-family: var(--global-text-fonts), sans-serif;
+    color: var(--text-color);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-left: 0.8rem;
+}
+
+.social-links {
+    margin-top: 0.9rem;
+}
+
+.twitch-icon, .boosty-icon, .discord-icon, .telegram-icon, .vk-icon {
+    height: auto;
+}
+
+.twitch-icon {
+    width: 1.3rem;
+}
+
+.discord-icon {
+    width: 1.55rem;
+}
+
+.telegram-icon {
+    padding: 0;
+}
+
+.vk-icon {
+    width: 1.5rem;
+}

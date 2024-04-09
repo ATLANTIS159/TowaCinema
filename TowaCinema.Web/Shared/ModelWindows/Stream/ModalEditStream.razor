@@ -1,0 +1,237 @@
+﻿@using System.Net.Http.Headers
+@using Microsoft.AspNetCore.Components.Forms
+@using Newtonsoft.Json
+@using Newtonsoft.Json.Converters
+@using TowaCinema.Web.Models
+<div class="modal">
+    <div class="modal-bg"></div>
+    <div class="modal-window">
+        <div class="modal-window-title">
+            <p>Изменение данных стрима</p>
+        </div>
+        <div class="modal-separator"></div>
+        <div class="modal-window-top">
+            <div class="modal-window-left">
+                <div class="modal-element">
+                    <p class="modal-element-title">Название стрима:</p>
+                    <input type="text" class="modal-text-input" @bind-Value="@StreamInfoModel.Title"
+                           @bind-Value:event="oninput"/>
+                </div>
+                <div class="modal-element modal-date">
+                    <p class="modal-element-title">Дата стрима:</p>
+                    <InputDate class="modal-date-input" @bind-Value="StreamInfoModel.StreamDate"/>
+                </div>
+                <div class="modal-element modal-publish">
+                    <p class="modal-element-title">Опубликовать стрим?</p>
+                    <div class="modal-live-switch @(StreamInfoModel.IsPublished ? "modal-switch-on" : null)"
+                         @onclick="() => StreamInfoModel.IsPublished = !StreamInfoModel.IsPublished">
+                        <span>LIVE</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-window-right">
+                <div class="modal-element modal-game-list">
+                    <p class="modal-element-title">Дата стрима:</p>
+                    <div class="modal-element-games-list">
+                        @switch (_gameInfoStatus)
+                        {
+                            case GameInfoStates.Waiting:
+                            default:
+                                <div class="loader-container">
+                                    <div class="loader"></div>
+                                    <div class="loader-title">
+                                        <p>Идёт получение данных стримов с кувшинок...</p>
+                                    </div>
+                                </div>
+                                break;
+                            case GameInfoStates.Empty:
+                                <div class="loader-container">
+                                    <div class="loader-error">🐸</div>
+                                    <div class="loader-title">
+                                        <p>На моих кувшинках нет ни одной игры</p>
+                                    </div>
+                                </div>
+                                break;
+                            case GameInfoStates.Error:
+                                <div class="loader-error-container">
+                                    <div class="loader-error">🐸</div>
+                                    <div class="loader-error-title">
+                                        <p>Я не могу найти свои кувшинки :(</p>
+                                        <p>Сервер недоступен</p>
+                                    </div>
+                                </div>
+                                break;
+                            case GameInfoStates.Success:
+                                @if (_gamesInfo is not null && _gamesInfo.Count > 0)
+                                {
+                                    <div class="modal-element-games-list-wrapper">
+                                        @foreach (var gameInfo in _gamesInfo)
+                                        {
+                                            <div class="modal-game">
+                                                <div class="modal-game-left">
+                                                    <div class="modal-game-title">
+                                                        <span>@gameInfo.Title</span>
+                                                    </div>
+                                                    @if (gameInfo.IsActive)
+                                                    {
+                                                        <div class="modal-game-timestamp">
+                                                            <p>Временная метка игры на стриме (hh:mm:ss):</p>
+                                                            <input type="time" step="1" @bind="@gameInfo.GameTimestamp">
+                                                        </div>
+                                                    }
+                                                </div>
+                                                <div class="modal-game-right">
+                                                    <div class="modal-game-switch @(gameInfo.IsActive ? "modal-game-active" : null)"
+                                                         @onclick="@(() => SwitchGameActive(gameInfo))">
+                                                        <div class="modal-game-switch-toggle"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+
+                                break;
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-separator"></div>
+        @if (!string.IsNullOrWhiteSpace(_responseErrorMessage))
+        {
+            <div class="modal-element-error">
+                <span>@($"* {_responseErrorMessage}")</span>
+            </div>
+            <div class="modal-separator"></div>
+        }
+        <div class="modal-buttons">
+            <button class="modal-button" disabled="@IsDisabled" @onclick="@SaveChanges">
+                <span>Сохранить</span>
+            </button>
+            <button class="modal-button" @onclick="@(() => CloseModalWindow(false))">
+                <span>Отменить</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool _isDisabled;
+
+    private bool IsDisabled => string.IsNullOrWhiteSpace(StreamInfoModel.Title) || _isDisabled;
+
+    private string? _responseErrorMessage;
+    private GameInfoStates _gameInfoStatus;
+    private List<GameInfoModel>? _gamesInfo;
+
+    [Parameter] public required StreamInfoModel StreamInfoModel { get; set; }
+
+    [Parameter] public EventCallback<bool> OnClose { get; set; }
+
+    private async Task CloseModalWindow(bool isSuccess)
+    {
+        await OnClose.InvokeAsync(isSuccess);
+    }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return Task.CompletedTask;
+
+        _ = GetGamesInfo();
+        return Task.CompletedTask;
+    }
+
+    private async Task GetGamesInfo()
+    {
+        ChangeGameInfoStatus(GameInfoStates.Waiting);
+
+        using var client = new HttpClient();
+        var data = await client.GetStringAsync(new Uri(new Uri(ClientVariables.InternalServerUrl), "archive/games?admin=true"));
+        _gamesInfo = JsonConvert.DeserializeObject<List<GameInfoModel>?>(data, new IsoDateTimeConverter
+        {
+            DateTimeFormat = "dd.MM.yyyy"
+        });
+
+        if (_gamesInfo is null)
+        {
+            ChangeGameInfoStatus(GameInfoStates.Error);
+            return;
+        }
+
+        if (_gamesInfo.Count == 0)
+        {
+            ChangeGameInfoStatus(GameInfoStates.Empty);
+            return;
+        }
+
+        _gamesInfo = _gamesInfo.OrderBy(o => o.Title).ToList();
+
+        if (_gamesInfo is not null)
+            foreach (var gameInfo in _gamesInfo.Where(gameInfo => StreamInfoModel.Games.Any(a => a.Id == gameInfo.Id)))
+            {
+                gameInfo.IsActive = true;
+                gameInfo.GameTimestamp = StreamInfoModel.Games.FirstOrDefault(f => f.Id == gameInfo.Id)!.GameTimestamp;
+            }
+
+        ChangeGameInfoStatus(GameInfoStates.Success);
+    }
+
+    private void ChangeGameInfoStatus(GameInfoStates state)
+    {
+        _gameInfoStatus = state;
+        StateHasChanged();
+    }
+
+    private void SwitchGameActive(GameInfoModel game)
+    {
+        game.IsActive = !game.IsActive;
+    }
+
+    private async Task SaveChanges()
+    {
+        _isDisabled = true;
+        _responseErrorMessage = null;
+
+        using var formData = new MultipartFormDataContent();
+
+        if (_gamesInfo is not null)
+        {
+            var games = _gamesInfo.Where(w => w.IsActive).ToList();
+            StreamInfoModel.Games = games;
+        }
+
+        var streamInfo = new StringContent(JsonConvert.SerializeObject(StreamInfoModel), new MediaTypeHeaderValue("application/json"));
+
+        formData.Add(streamInfo, "StreamInfo");
+
+        try
+        {
+            using var httpClient = new HttpClient();
+            var response = await httpClient.PutAsync(new Uri(new Uri(ClientVariables.InternalServerUrl), "archive/streams"), formData);
+
+            if (response.IsSuccessStatusCode)
+            {
+                await CloseModalWindow(true);
+            }
+
+            _responseErrorMessage = await response.Content.ReadAsStringAsync();
+            _isDisabled = false;
+        }
+        catch
+            (Exception)
+        {
+            _responseErrorMessage = "При попытке отправки данных на сервер возникли проблемы";
+            _isDisabled = false;
+        }
+    }
+
+    private void Callback(GameInfoModel game, ChangeEventArgs value)
+    {
+        Console.WriteLine((string)value.Value!);
+        if (!TimeOnly.TryParse((string)value.Value!, out var timestamp)) return;
+
+        game.GameTimestamp = timestamp;
+    }
+
+}

@@ -1,0 +1,39 @@
+﻿@if (StreamInfo is not null)
+{
+    <div class="modal" title="">
+        <div class="modal-bg modal-round" @onclick="@(() => Close(false))"></div>
+        <div class="modal-confirm-main">
+            @if (IsViewed)
+            {
+                <p class="modal-element-title">Отметить стрим просмотренным?</p>
+            }
+            else
+            {
+                <p class="modal-element-title">Отметить стрим не просмотренным?</p>
+            }
+            <div class="modal-buttons">
+                <button class="modal-button" @onclick="@(() => Close(true))">
+                    <span>Подтвердить</span>
+                </button>
+                <button class="modal-button" @onclick="@(() => Close(false))">
+                    <span>Отменить</span>
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+
+    [Parameter] public StreamInfoModel? StreamInfo { get; set; }
+
+    [Parameter] public bool IsViewed { get; set; }
+
+    [Parameter] public EventCallback<bool> OnClose { get; set; }
+
+    private async Task Close(bool isDelete)
+    {
+        await OnClose.InvokeAsync(isDelete);
+    }
+
+}

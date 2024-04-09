@@ -1,0 +1,44 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TowaCinema.Web", "TowaCinema.Web\TowaCinema.Web.csproj", "{47077F7A-CB6B-4A54-AE4D-53824789F3FF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TowaCinema.Server", "TowaCinema.Server\TowaCinema.Server.csproj", "{2A4B2036-D178-4E89-8208-9C25AE5C0C32}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Client", "Client", "{CD40C7FE-5448-4894-9F54-852B06094CEE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Server", "Server", "{D6841AA2-0839-4662-99FF-F0B608117222}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{78973590-65C7-4643-896C-F7539207E660}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TowaCinema.ClassLibrary", "TowaCinema.ClassLibrary\TowaCinema.ClassLibrary.csproj", "{FBD103F4-87FF-466E-9CC2-606CA9F2B0D9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B32A8477-5A6B-4280-83D0-EE6A00C620F2}"
+	ProjectSection(SolutionItems) = preProject
+		docker-compose.yml = docker-compose.yml
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{47077F7A-CB6B-4A54-AE4D-53824789F3FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47077F7A-CB6B-4A54-AE4D-53824789F3FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47077F7A-CB6B-4A54-AE4D-53824789F3FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47077F7A-CB6B-4A54-AE4D-53824789F3FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A4B2036-D178-4E89-8208-9C25AE5C0C32}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A4B2036-D178-4E89-8208-9C25AE5C0C32}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A4B2036-D178-4E89-8208-9C25AE5C0C32}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A4B2036-D178-4E89-8208-9C25AE5C0C32}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FBD103F4-87FF-466E-9CC2-606CA9F2B0D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FBD103F4-87FF-466E-9CC2-606CA9F2B0D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FBD103F4-87FF-466E-9CC2-606CA9F2B0D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FBD103F4-87FF-466E-9CC2-606CA9F2B0D9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{47077F7A-CB6B-4A54-AE4D-53824789F3FF} = {CD40C7FE-5448-4894-9F54-852B06094CEE}
+		{2A4B2036-D178-4E89-8208-9C25AE5C0C32} = {D6841AA2-0839-4662-99FF-F0B608117222}
+		{FBD103F4-87FF-466E-9CC2-606CA9F2B0D9} = {78973590-65C7-4643-896C-F7539207E660}
+	EndGlobalSection
+EndGlobal

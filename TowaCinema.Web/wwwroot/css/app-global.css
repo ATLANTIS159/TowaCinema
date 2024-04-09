@@ -1,0 +1,192 @@
+@import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Sofia+Sans:wght@1;100;200;300;400;500;600;700;800;900;1000&display=swap');
+
+:root {
+    --global-text-fonts: 'Sofia Sans';
+    --scrollbar-track-color: hsl(190, 75%, 10%);
+    --scrollbar-handle-color: hsl(190, 75%, 15%);
+    --scrollbar-handle-hover-color: hsl(190, 75%, 20%);
+    --background-color: hsl(190, 75%, 6%);
+    --sidebar-gradient-1: hsl(190, 75%, 6%);
+    --sidebar-gradient-2: hsl(189, 76%, 5%);
+    --title-text-fonts: 'Pacifico';
+    --title-text-color: hsl(0, 0%, 100%);
+    --text-color: hsl(0, 0%, 65%);
+    --icons-color: hsl(0, 0%, 65%);
+    --glow-color: hsl(180, 100%, 50%);
+    --separator-gradient-1: hsl(180, 100%, 50%, 0%);
+    --separator-gradient-2: hsl(180, 100%, 50%, 15%);
+    --button-active-gradient-1: hsla(180, 100%, 50%, 10%);
+    --button-active-gradient-2: hsla(180, 100%, 50%, 0%);
+    --nav-icon-color: hsl(0, 0%, 65%);
+    --border-color: hsl(184, 100%, 16%);
+    --icon-shape-active-gradient-1: hsl(180, 100%, 30%);
+    --icon-shape-active-gradient-2: hsl(184, 100%, 5%);
+    --icon-shape-hover-gradient-1: hsl(180, 100%, 30%, 60%);
+    --icon-shape-hover-gradient-2: hsl(184, 100%, 5%);
+    --topbar-gradient-1: hsl(183, 100%, 5%);
+    --topbar-gradient-2: hsl(183, 100%, 8%);
+    --topbar-gradient-3: hsl(180, 100%, 30%, 60%);
+    --topbar-gradient-4: hsl(180, 100%, 30%);
+    --topbar-gradient-5: hsl(0, 69%, 42%);
+    --background-blurred-shape-color-1: hsl(190, 100%, 50%);
+    --background-blurred-shape-color-2: hsl(190, 100%, 50%, 0%);
+    --helper-background-color: hsl(0, 0%, 0%, 90%);
+    --player-slider-background: hsl(0, 0%, 65%);
+    --player-slider-level: hsl(190, 100%, 50%);
+    --player-controls-gradient-1: hsl(0, 0%, 0%, 100%);
+    --player-controls-gradient-2: hsl(0, 0%, 0%, 40%);
+    --modal-bg: rgba(0, 0, 0, 0.7);
+}
+
+*,
+::after,
+::before {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.material-symbols-outlined {
+    font-size: 20px !important;
+    font-variation-settings: 'FILL' 0,
+    'wght' 300,
+    'GRAD' 0,
+    'opsz' 20
+}
+
+.material-symbols-filled {
+    font-size: 28px !important;
+    font-variation-settings: 'FILL' 1,
+    'wght' 300,
+    'GRAD' 0,
+    'opsz' 20
+}
+
+::-webkit-scrollbar {
+    width: 0.375rem;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--scrollbar-track-color);
+    border-radius: 0.188rem;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-handle-color);
+    border-radius: 0.188rem;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-handle-hover-color);
+}
+
+.towacinema {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+}
+
+.main-background {
+    position: absolute;
+    z-index: -1000;
+    height: 100%;
+    width: 100%;
+    background-color: var(--background-color);
+}
+
+.cinema {
+    display: flex;
+    height: 100%;
+}
+
+.left-side, .right-side {
+    height: 100%;
+}
+
+.left-side {
+    width: min(16rem, 100%);
+    background: linear-gradient(168deg, var(--sidebar-gradient-1) 20%, var(--sidebar-gradient-2) 100%);
+}
+
+.right-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.loader-container, .loader-empty-container, .loader-error-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3rem;
+}
+
+.loader {
+    display: inline-grid;
+    font-size: 10rem;
+}
+
+.loader:before,
+.loader:after {
+    content: "🐸";
+    grid-area: 1/1;
+}
+
+.loader:after {
+    animation: loader-animation 1s infinite;
+}
+
+@keyframes loader-animation {
+    to {
+        transform: scale(1.6);
+        opacity: 0
+    }
+}
+
+.loader-title, .loader-empty-title, .loader-error-title {
+    font-family: var(--global-text-fonts), sans-serif;
+    color: var(--text-color);
+    font-size: 2rem;
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.loader-empty, .loader-error {
+    font-size: 10rem;
+}
+
+.page-title {
+    font-family: var(--global-text-fonts), sans-serif;
+    color: var(--text-color);
+    font-size: 1rem;
+    font-weight: 400;
+    text-align: center;
+    padding-block: 1rem;
+    border-bottom: 1px solid;
+    border-top: 1px solid;
+    border-image: linear-gradient(270deg, var(--separator-gradient-1) 2%, var(--separator-gradient-2) 50%, var(--separator-gradient-1) 98%) 1;
+    margin-top: 1rem;
+}
+
+.version {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: flex-start;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.version span {
+    font-family: var(--global-text-fonts), sans-serif;
+    color: var(--text-color);
+    font-size: 0.5rem;
+    font-weight: 400;
+}

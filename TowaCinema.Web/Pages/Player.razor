@@ -1,0 +1,465 @@
+﻿@page "/player/{id:guid}"
+@using System.Globalization
+@using System.Net.Http.Headers
+@using System.Security.Claims
+@using Newtonsoft.Json
+@using Newtonsoft.Json.Converters
+@using TowaCinema.ClassLibrary.Enums
+@inject IJSRuntime JsRuntime
+
+<PageTitle>
+    @(_streamInfo is null ? "etaCarinae Archive Player" : _streamInfo.Title)
+    - @ClientVariables.PageTitleEnding
+</PageTitle>
+
+<TopBar PageTitle="Приятного просмотра"/>
+<div class="player">
+    @if (_streamInfo is not null)
+    {
+        <div class="player-wrapper">
+            <div class="player-background">
+                <div class="player-background-shape-1"></div>
+            </div>
+            <div class="player-container">
+                <div class="player-backplate">
+                    <video preload="none" class="player-screen" tabindex="-1"
+                           @onkeydown="OnKeyPressed"
+                           poster="@(new Uri(new Uri(ClientVariables.ExternalServerUrl), $"archive/thumbnails/stream/{_streamInfo?.Id}/lg"))"
+                           @ontimeupdate="@OnTimeUpdate"
+                           @onwaiting="@(() => SwitchLoadingOverlay(true))"
+                           @onplaying="@(() => SwitchLoadingOverlay(false))"
+                           @onclick="@TogglePlay">
+                    </video>
+                </div>
+                @if (_isLoading)
+                {
+                    <div class="player-screen-loading">
+                        <div class="player-screen-loading-container">
+                            <div class="player-screen-loading-icon"></div>
+                            <div class="player-screen-loading-title">
+                                <p>Идёт загрузка, подождите</p>
+                            </div>
+                        </div>
+                    </div>
+                }
+                <div class="player-controls show-controls">
+                    <div class="progress-bar" @onmousemove="@OnProgressBarMouseMove" @onclick="@OnProgressBarClick"
+                         @onmousedown="@OnProgressBarMouseDown" @onmouseup="@OnProgressBarMouseUp">
+                        <span>@_progressBarTime</span>
+                        <div class="progress-background">
+                            <div class="progress-level"></div>
+                        </div>
+                    </div>
+                    <div class="player-playback-buttons" tabindex="-1" @onkeydown="OnKeyPressed">
+                        <div class="player-playback-left">
+                            <button class="player-replay player-icon" @onclick="@SkipBackward">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                    <path d="M0 0h24v24H0z" fill="none"/>
+                                    <path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/>
+                                </svg>
+                            </button>
+                            <button class="player-play player-icon" @onclick="@TogglePlay">
+                                @if (_isPlaying)
+                                {
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                        <path d="M0 0h24v24H0z" fill="none"/>
+                                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                                    </svg>
+                                }
+                                else
+                                {
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                        <path d="M0 0h24v24H0z" fill="none"/>
+                                        <path d="M8 5v14l11-7z"/>
+                                    </svg>
+                                }
+                            </button>
+                            <button class="player-forward player-icon" @onclick="@SkipForward">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                    <path d="M0 0h24v24H0z" fill="none"/>
+                                    <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
+                                </svg>
+                            </button>
+                            <div class="player-volume-controls">
+                                <button class="player-volume player-icon" @onclick="@ToggleVolumeMute">
+                                    @if (_isMuted)
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                            <path d="M0 0h24v24H0z" fill="none"/>
+                                            <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+                                        </svg>
+                                    }
+                                    else
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                            <path d="M0 0h24v24H0z" fill="none"/>
+                                            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                                        </svg>
+                                    }
+                                </button>
+                                <div class="player-volume-slider-container">
+                                    <input class="player-volume-slider" type="range" min="0" max="1" value="1" step="any"
+                                           @oninput="@OnVolumeChanged"/>
+                                </div>
+                            </div>
+                            <div class="player-video-timer">
+                                <span class="current-time">@_currentTime</span>
+                                <span class="separator">/</span>
+                                <span class="video-duration">@_streamInfo?.Duration</span>
+                            </div>
+                        </div>
+                        <div class="player-playback-right">
+                            <button class="player-pip player-icon" @onclick="@TogglePip">
+                                @if (_isInPip)
+                                {
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                                        <path d="M160-160q-33 0-56.5-23.5T80-240v-280h80v280h640v-480H440v-80h360q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm523-140 57-57-124-123h104v-80H480v240h80v-103l123 123ZM80-600v-200h280v200H80Zm400 120Z"/>
+                                    </svg>
+                                }
+                                else
+                                {
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                                        <path d="M80-520v-80h144L52-772l56-56 172 172v-144h80v280H80Zm80 360q-33 0-56.5-23.5T80-240v-200h80v200h320v80H160Zm640-280v-280H440v-80h360q33 0 56.5 23.5T880-720v280h-80ZM560-160v-200h320v200H560Z"/>
+                                    </svg>
+                                }
+                            </button>
+                            <button class="player-fullscreen player-icon" @onclick="@ToggleFullscreen">
+                                @if (_isInFullscreen)
+                                {
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                                        <path d="M320-200v-120H200v-80h200v200h-80Zm240 0v-200h200v80H640v120h-80ZM200-560v-80h120v-120h80v200H200Zm360 0v-200h80v120h120v80H560Z"/>
+                                    </svg>
+                                }
+                                else
+                                {
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                                        <path d="M200-200v-200h80v120h120v80H200Zm0-360v-200h200v80H280v120h-80Zm360 360v-80h120v-120h80v200H560Zm120-360v-120H560v-80h200v200h-80Z"/>
+                                    </svg>
+                                }
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="player-stream-info">
+                <div class="player-background-shape-2"></div>
+                <div class="player-background-shape-3"></div>
+                <div class="player-info-top">
+                    <p class="player-stream-title">@_streamInfo?.Title</p>
+                    <p class="player-stream-date">Дата стрима: @_streamInfo?.StreamDate.ToString("dd.MM.yyyy")</p>
+                </div>
+                <div class="player-info-bottom">
+                    @if (_streamInfo is not null)
+                    {
+                        @foreach (var game in _streamInfo.Games)
+                        {
+                            <button class="player-info-games" @onclick="@(() => SetStreamTime(game.GameTimestamp.ToString()))">
+                                <span>@game.Title</span>
+                            </button>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        @if (_isError)
+        {
+            <div class="loader-error-container">
+                <div class="loader-error">🐸</div>
+                <div class="loader-error-title">
+                    <p>Я не могу найти свои кувшинки :(</p>
+                    <p>Сервер недоступен</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="loader-container">
+                <div class="loader"></div>
+                <div class="loader-title">
+                    <p>Ищу нужный стрим на архивных кувшинках...</p>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private StreamInfoModel? _streamInfo;
+    private IJSObjectReference? _playerScript;
+    private bool _isLoading;
+    private bool _isError;
+    private bool _isPlaying;
+    private bool _isMuted;
+    private bool _isInPip;
+    private bool _isInFullscreen;
+    private int _lastupdatedTime;
+    private string _progressBarTime = TimeSpan.Zero.ToString(@"hh\:mm\:ss");
+    private string _currentTime = TimeSpan.Zero.ToString(@"hh\:mm\:ss");
+    private bool _isProgressBarMouseDown;
+    private readonly int _startStopSeconds = 2 * 60;
+
+    private int StreamDuration => _streamInfo is null ? 0 : int.Parse(TimeSpan.Parse(_streamInfo.Duration).TotalSeconds.ToString(CultureInfo.InvariantCulture));
+
+    [Parameter] public Guid Id { get; set; }
+
+    [Parameter] [SupplyParameterFromQuery] public int? Start { get; set; }
+
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetStreamInfo();
+    }
+
+    private async Task GetStreamInfo()
+    {
+        try
+        {
+            using var client = new HttpClient();
+            var data = await client.GetStringAsync(new Uri(new Uri(ClientVariables.InternalServerUrl), $"archive/streams/{Id}"));
+            _streamInfo = JsonConvert.DeserializeObject<StreamInfoModel>(data, new IsoDateTimeConverter
+            {
+                DateTimeFormat = "dd.MM.yyyy"
+            });
+        }
+        catch (Exception)
+        {
+            _isError = true;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender && _streamInfo is not null)
+        {
+            if (_playerScript is null)
+            {
+                _playerScript = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "/js/archive-2.js");
+                await _playerScript.InvokeVoidAsync("init");
+                await _playerScript.InvokeVoidAsync("initHls", GetVideoUrl(), Start ?? Start);
+            }
+        }
+    }
+
+    private string GetVideoUrl()
+    {
+        return $"{new Uri(new Uri(ClientVariables.ExternalServerUrl), $"archive/videos/{_streamInfo?.Id}/playlist-1080.m3u8")}";
+    }
+
+    private void SwitchLoadingOverlay(bool showOverlay)
+    {
+        _isLoading = showOverlay;
+    }
+
+    private async Task SetStreamTime(string time)
+    {
+        if (_playerScript is null) return;
+
+        await _playerScript.InvokeVoidAsync("setCurrentTime", time);
+    }
+
+    private async Task TogglePlay()
+    {
+        if (_playerScript is null || _isLoading) return;
+
+        var result = await _playerScript.InvokeAsync<string>("togglePlayVideo");
+
+        _isPlaying = result switch
+        {
+            "play" => true,
+            "pause" => false,
+            _ => _isPlaying
+        };
+    }
+
+    private async Task ToggleVolumeMute()
+    {
+        if (_playerScript is null) return;
+
+        var result = await _playerScript.InvokeAsync<string>("toggleVolumeMute");
+
+        _isMuted = result switch
+        {
+            "mute" => true,
+            "unmute" => false,
+            _ => _isMuted
+        };
+    }
+
+    private async Task ToggleFullscreen()
+    {
+        if (_playerScript is null) return;
+
+        var result = await _playerScript.InvokeAsync<string>("toggleFullscreen");
+
+        _isInFullscreen = result switch
+        {
+            "normal" => false,
+            "fullscreen" => true,
+            _ => _isInFullscreen
+        };
+    }
+
+    private async Task TogglePip()
+    {
+        if (_playerScript is null) return;
+
+        var result = await _playerScript.InvokeAsync<string>("togglePip");
+
+        _isInPip = result switch
+        {
+            "normal" => false,
+            "pip" => true,
+            _ => _isInPip
+        };
+    }
+
+    private async Task SkipForward()
+    {
+        if (_playerScript is null) return;
+
+        await _playerScript.InvokeVoidAsync("skipForward");
+    }
+
+    private async Task SkipBackward()
+    {
+        if (_playerScript is null) return;
+
+        await _playerScript.InvokeVoidAsync("skipBackward");
+    }
+
+    private async Task OnVolumeChanged(ChangeEventArgs args)
+    {
+        if (_playerScript is null || !float.TryParse(args.Value?.ToString(), out var value)) return;
+
+        var result = await _playerScript.InvokeAsync<string>("volumeChanged", value);
+
+        _isMuted = result switch
+        {
+            "muted" => true,
+            "unmuted" => false,
+            _ => _isMuted
+        };
+    }
+
+    private async Task OnTimeUpdate()
+    {
+        if (_playerScript is null) return;
+
+        var time = await _playerScript.InvokeAsync<int>("updateTime");
+
+        _currentTime = TimeSpan.FromSeconds(time).ToString(@"hh\:mm\:ss");
+
+        if ((bool)AuthenticationState?.Result.User.Identity?.IsAuthenticated && _streamInfo is not null)
+        {
+            if (time % 5 == 0 && _lastupdatedTime != time)
+            {
+                _lastupdatedTime = time;
+
+                var userId = AuthenticationState.Result.User.Claims.FirstOrDefault(f => f.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (userId is null) return;
+
+                var beforeTimeRange = time <= _startStopSeconds;
+                var inTimeRange = time > _startStopSeconds && time < StreamDuration - _startStopSeconds;
+                var afterTimeRange = time >= StreamDuration - _startStopSeconds;
+
+                if (beforeTimeRange)
+                {
+                    using var httpClient = new HttpClient();
+                    await httpClient.DeleteAsync(new Uri(new Uri(ClientVariables.InternalServerUrl),
+                        $"archive/timestamp/{userId}/{_streamInfo.Id}?state={TimestampStates.Start}"));
+                }
+                else if (inTimeRange)
+                {
+                    using var httpClient = new HttpClient();
+                    await httpClient.PutAsync(new Uri(new Uri(ClientVariables.InternalServerUrl),
+                        $"archive/timestamp/{userId}/{_streamInfo?.Id}"), new StringContent(time.ToString(),
+                        new MediaTypeHeaderValue("application/json")));
+                }
+                else if (afterTimeRange)
+                {
+                    using var httpClient = new HttpClient();
+                    await httpClient.DeleteAsync(new Uri(new Uri(ClientVariables.InternalServerUrl),
+                        $"archive/timestamp/{userId}/{_streamInfo.Id}?state={TimestampStates.End}"));
+                }
+            }
+        }
+    }
+
+    private async Task OnProgressBarMouseMove(MouseEventArgs args)
+    {
+        if (_playerScript is null) return;
+
+        if (_isProgressBarMouseDown)
+        {
+            var currentSeconds = await _playerScript.InvokeAsync<int>("dragProgressBar", args.OffsetX);
+            _currentTime = TimeSpan.FromSeconds(currentSeconds).ToString(@"hh\:mm\:ss");
+        }
+
+        var progressSeconds = await _playerScript.InvokeAsync<int>("progressBarMouseMoved", args.OffsetX);
+
+        _progressBarTime = TimeSpan.FromSeconds(progressSeconds).ToString(@"hh\:mm\:ss");
+    }
+
+    private async Task OnProgressBarClick(MouseEventArgs args)
+    {
+        if (_playerScript is null) return;
+
+        await _playerScript.InvokeVoidAsync("progressBarClicked", args.OffsetX);
+    }
+
+    private void OnProgressBarMouseDown()
+    {
+        _isProgressBarMouseDown = true;
+    }
+
+    private void OnProgressBarMouseUp()
+    {
+        _isProgressBarMouseDown = false;
+    }
+
+    private async Task OnKeyPressed(KeyboardEventArgs key)
+    {
+        if (_playerScript is null) return;
+
+        switch (key.Code)
+        {
+            case "ArrowRight":
+                await _playerScript.InvokeVoidAsync("skipForward");
+                break;
+            case "ArrowLeft":
+                await _playerScript.InvokeVoidAsync("skipBackward");
+                break;
+            case "Space":
+                if (!_isLoading)
+                {
+                    var playResult = await _playerScript.InvokeAsync<string>("togglePlayVideo");
+
+                    _isPlaying = playResult switch
+                    {
+                        "play" => true,
+                        "pause" => false,
+                        _ => _isPlaying
+                    };
+                }
+
+                break;
+            case "KeyM":
+                var muteResult = await _playerScript.InvokeAsync<string>("toggleVolumeMute");
+
+                _isMuted = muteResult switch
+                {
+                    "mute" => true,
+                    "unmute" => false,
+                    _ => _isMuted
+                };
+                break;
+            default:
+                return;
+        }
+    }
+
+}
